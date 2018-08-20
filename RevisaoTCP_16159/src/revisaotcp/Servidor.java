@@ -16,6 +16,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+import javax.imageio.ImageIO;
 
 /**
  * Servidor simples que recebe o caminho de um arquivo, retornando 
@@ -73,19 +74,40 @@ public class Servidor {
                 caminhoArquivo = "index.html";
             }            
             
-         
-            File arquivo = new File(caminhoArquivo.replaceFirst("/", ""));
-
+            caminhoArquivo = caminhoArquivo.replace("/", "");
+            String tipoArquivo = caminhoArquivo.split("\\.")[1];
+            String tipoConteudo = "";
+            
+            File arquivo = new File(caminhoArquivo);
+            
             String status = protocolo + " 200 OK\r\n";
             
             // Se o arquvio não existe, muda o status e exibe a pagina de erro
             if (!arquivo.exists()) {
                 status = protocolo + " 404 Not Found\r\n";
                 arquivo = new File("erro.html");
+                tipoConteudo = "text/html\r\n";
             }
+            else{ // trata o tipo de arquivo, aceiatando html e imagens
+                switch (tipoArquivo) 
+                {
+                    case "html":
+                        tipoConteudo = "text/html\r\n";
+                        break;
+                        
+                    case "png":
+                        tipoConteudo = "image/png\r\n";
+                        break;
+                        
+                    case "jpeg":
+                    case "jpg":
+                        tipoConteudo = "image/jpeg\r\n";
+                }
+            }       
 
             /*Todo esse bloco le o arquivo em bytes e formata 
             para ficar de acordo com o padrão do HTTP*/
+            
             byte[] conteudo = Files.readAllBytes(arquivo.toPath()); 
             
             SimpleDateFormat formatador = new SimpleDateFormat("E, dd MMM yyyy hh:mm:ss", Locale.ENGLISH);
@@ -99,8 +121,8 @@ public class Servidor {
             String header = status
                     + "Location: http://localhost:8000/\r\n"
                     + "Date: " + dataFormatada + "\r\n"
-                    + "Server: MeuServidor/1.0\r\n"
-                    + "Content-Type: text/html\r\n"
+                    + "Server: ServidorProgRedes/1.0\r\n"
+                    + "Content-Type: " + tipoConteudo
                     + "Content-Length: " + conteudo.length + "\r\n"
                     + "Connection: close\r\n"
                     + "\r\n";
@@ -109,7 +131,7 @@ public class Servidor {
             OutputStream resposta = socket.getOutputStream();           
             resposta.write(header.getBytes());            
             resposta.write(conteudo);            
-            resposta.flush();
+            resposta.flush(); 
         }
     }
     }
